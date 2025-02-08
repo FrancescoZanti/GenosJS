@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const logoImg = document.createElement('img');
             // Assicura che il path sia corretto in base alla struttura del progetto
-            logoImg.src = '../assets/logo.png';
+            logoImg.src = 'assets/logo.png';
             logoImg.alt = 'Logo';
             stickerDiv.appendChild(logoImg);
 
@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let logoDataURL;
         try {
-            logoDataURL = await loadImageAsDataURL('../assets/logo.png');
+            logoDataURL = await loadImageAsDataURL('assets/logo.png');
         } catch (error) {
             console.error('Errore nel caricamento del logo:', error);
             return;
