@@ -1,12 +1,27 @@
 document.addEventListener('DOMContentLoaded', () => {
     const urlInput = document.getElementById('url-input');
+    const logoInput = document.getElementById('logo-input'); // input file per il logo
     const generateButton = document.getElementById('generate-button');
     const downloadPdfButton = document.getElementById('download-pdf');
     const stickerContainer = document.getElementById('sticker-container');
 
-    generateButton.addEventListener('click', () => {
+    generateButton.addEventListener('click', async () => {
         const urls = urlInput.value.split('\n').filter(url => url.trim() !== '');
-        stickerContainer.innerHTML = ''; // Clear previous stickers
+        stickerContainer.innerHTML = ''; // Pulisce gli adesivi precedenti
+
+        // Se è stato caricato un file, lo legge, altrimenti usa la path di default
+        let logoDataURL;
+        if (logoInput.files && logoInput.files.length > 0) {
+            try {
+                logoDataURL = await readUploadedLogo(logoInput.files[0]);
+            } catch (error) {
+                console.error('Errore nel caricamento del logo caricato:', error);
+                // In caso di errore, usa l'immagine di default
+                logoDataURL = '../assets/logo.png';
+            }
+        } else {
+            logoDataURL = '../assets/logo.png';
+        }
 
         urls.forEach(url => {
             const stickerDiv = document.createElement('div');
@@ -28,11 +43,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Funzione di supporto per caricare un'immagine come DataURL
+    // Funzione di supporto per caricare un'immagine come DataURL (default)
     function loadImageAsDataURL(src) {
         return new Promise((resolve, reject) => {
             const img = new Image();
-            // Imposta crossOrigin se l'immagine potrebbe essere soggetta a CORS
             img.crossOrigin = 'Anonymous';
             img.onload = () => {
                 const canvas = document.createElement('canvas');
@@ -44,6 +58,16 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             img.onerror = reject;
             img.src = src;
+        });
+    }
+
+    // Funzione per leggere il file caricato dall'utente come DataURL
+    function readUploadedLogo(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
         });
     }
 
@@ -75,10 +99,9 @@ document.addEventListener('DOMContentLoaded', () => {
             format: 'a4'
         });
 
-        // Sticker A6: 105 x 148 mm
+        // Sticker A6: 105 x 148 mm, diviso verticalmente per logo e QR code
         const stickerWidth = 105;
         const stickerHeight = 148;
-        // Posizioni per sticker in una griglia 2x2 su ogni pagina A4
         const positions = [
             { x: 0, y: 0 },
             { x: stickerWidth, y: 0 },
@@ -86,9 +109,6 @@ document.addEventListener('DOMContentLoaded', () => {
             { x: stickerWidth, y: stickerHeight }
         ];
 
-        // Layout interno dello sticker:
-        // Utilizziamo uno spazio interno pari a (stickerWidth - 2*padding) in larghezza
-        // e dividiamo verticalmente l'altezza disponibile in due parti (logo e QR) con un gap
         const padding = 5;
         const gap = 5;
         const availableHeight = stickerHeight - 2 * padding;
@@ -110,17 +130,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 continue;
             }
 
-            // Aggiungiamo il logo centrato orizzontalmente nell'area dedicata
-            const logoX = pos.x + padding + (elementWidth - elementWidth) / 2; // elementWidth qui è la larghezza completa
+            // Aggiunge il logo nella parte superiore dello sticker
+            const logoX = pos.x + padding;
             const logoY = pos.y + padding;
-            doc.addImage(logoDataURL, 'PNG', logoX, logoY, elementWidth, elementHeight);
+            doc.addImage(logoDataURL, logoFormat, logoX, logoY, elementWidth, elementHeight);
 
-            // Aggiungiamo il QR code centrato orizzontalmente subito sotto il logo
+            // Aggiunge il QR code subito sotto il logo (il QR è in PNG)
             const qrX = pos.x + padding;
             const qrY = logoY + elementHeight + gap;
             doc.addImage(qrDataURL, 'PNG', qrX, qrY, elementWidth, elementHeight);
 
-            // Disegniamo il rettangolo tratteggiato per le linee di taglio
+            // Disegna il rettangolo tratteggiato per le linee di taglio
             doc.setLineDash([2, 2]);
             doc.setDrawColor(150);
             doc.rect(pos.x, pos.y, stickerWidth, stickerHeight);
