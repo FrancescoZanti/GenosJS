@@ -28,8 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
             stickerDiv.className = 'sticker';
 
             const logoImg = document.createElement('img');
-            // Assicura che il path sia corretto in base alla struttura del progetto
-            logoImg.src = 'assets/logo.png';
+            logoImg.src = logoDataURL;
             logoImg.alt = 'Logo';
             stickerDiv.appendChild(logoImg);
 
@@ -85,12 +84,25 @@ document.addEventListener('DOMContentLoaded', () => {
         const urls = urlInput.value.split('\n').filter(url => url.trim() !== '');
         if (urls.length === 0) return;
 
-        let logoDataURL;
-        try {
-            logoDataURL = await loadImageAsDataURL('assets/logo.png');
-        } catch (error) {
-            console.error('Errore nel caricamento del logo:', error);
-            return;
+        let logoDataURL, logoFormat = 'PNG';
+
+        // Se l'utente ha caricato un'immagine, la usa e implica il formato corretto, altrimenti usa quella di default
+        if (logoInput.files && logoInput.files.length > 0) {
+            try {
+                const file = logoInput.files[0];
+                logoFormat = file.type.includes('jpeg') ? 'JPEG' : 'PNG';
+                logoDataURL = await readUploadedLogo(file);
+            } catch (error) {
+                console.error('Errore nel caricamento del logo caricato:', error);
+                return;
+            }
+        } else {
+            try {
+                logoDataURL = await loadImageAsDataURL('../assets/logo.png');
+            } catch (error) {
+                console.error('Errore nel caricamento del logo di default:', error);
+                return;
+            }
         }
 
         const { jsPDF } = window.jspdf;
